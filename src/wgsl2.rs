@@ -32,7 +32,7 @@ pub fn wgsl2(stream: TokenStream) -> TokenStream {
                             Ok(x) => x,
                             Err(x) => x.saturating_sub(1),
                         };
-                        abort!(spans[pos].1, "Wgsl Error: {}", e)
+                        abort!(spans[pos].1, "Wgsl Error: {}", e);
                     }
                     let e_str = e.to_string();
                     quote! {compile_error!(#e_str)}
@@ -46,7 +46,7 @@ pub fn wgsl2(stream: TokenStream) -> TokenStream {
                     Ok(x) => x,
                     Err(x) => x.saturating_sub(1),
                 };
-                abort!(spans[pos].1, "Wgsl Error: {}", e)
+                abort!(spans[pos].1, "Wgsl Error: {}", e);
             }
             let e_str = e.to_string();
             quote! {compile_error!(#e_str)}

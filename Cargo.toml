@@ -31,3 +31,5 @@ naga = { version = "0.20.0", features = ["wgsl-in"] }
 proc-macro-error = "1.0.4"
 proc-macro2 = "1.0.86"
 quote = "1.0.36"
+syn = { version = "2.0.94", features = ["full"]   }
+

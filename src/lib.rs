@@ -123,15 +123,16 @@
 //! * Checks will be disabled when naga_oil preprocessor macros are detected.
 //!
 
-use proc_macro::TokenStream as TokenStream1;
-use proc_macro_error::proc_macro_error;
+use proc_macro::TokenStream;
+use proc_macro_error::{proc_macro_error, set_dummy};
 mod __wgsl_paste2;
+mod conversions;
 mod open_close;
+mod rust_to_wgsl;
 mod sanitize;
 mod to_wgsl_string;
 mod wgsl2;
 mod wgsl_export2;
-
 /// Converts normal rust tokens into a wgsl `&'static str`, similar to [`stringify!`].
 /// This also validates the wgsl string using [`naga`]. Errors will be reported with
 /// the correct span.
@@ -163,8 +164,20 @@ mod wgsl_export2;
 /// ```
 #[proc_macro]
 #[proc_macro_error]
-pub fn wgsl(stream: TokenStream1) -> TokenStream1 {
+pub fn wgsl(stream: TokenStream) -> TokenStream {
+    set_dummy(quote! {
+        ()
+    });
     wgsl2::wgsl2(stream.into()).into()
+}
+
+#[proc_macro]
+#[proc_macro_error]
+pub fn rust_to_wgsl(stream: TokenStream) -> TokenStream {
+    set_dummy(quote! {
+        ()
+    });
+    rust_to_wgsl::rust_to_wgsl(stream.into()).into()
 }
 
 /// Export a wgsl item (function, struct, etc).
@@ -182,14 +195,30 @@ pub fn wgsl(stream: TokenStream1) -> TokenStream1 {
 /// ```
 #[proc_macro_attribute]
 #[proc_macro_error]
-pub fn wgsl_export(attr: TokenStream1, stream: TokenStream1) -> TokenStream1 {
+pub fn wgsl_export(attr: TokenStream, stream: TokenStream) -> TokenStream {
+    set_dummy(quote! {
+        ()
+    });
     wgsl_export2::wgsl_export2(attr.into(), stream.into()).into()
+}
+
+#[proc_macro_attribute]
+#[proc_macro_error]
+pub fn rust_to_wgsl_export(attr: TokenStream, stream: TokenStream) -> TokenStream {
+    wgsl_export2::rust_to_wgsl_export2(attr.into(), stream.into()).into()
+}
+/// Paste and avoid duplicates.
+#[doc(hidden)]
+#[proc_macro]
+#[proc_macro_error]
+pub fn __wgsl_paste(stream: TokenStream) -> TokenStream {
+    __wgsl_paste2::__wgsl_paste2(stream.into()).into()
 }
 
 /// Paste and avoid duplicates.
 #[doc(hidden)]
 #[proc_macro]
 #[proc_macro_error]
-pub fn __wgsl_paste(stream: TokenStream1) -> TokenStream1 {
-    __wgsl_paste2::__wgsl_paste2(stream.into()).into()
+pub fn __rust_to_wgsl_paste(stream: TokenStream) -> TokenStream {
+    __wgsl_paste2::__rust_to_wgsl_paste2(stream.into()).into()
 }

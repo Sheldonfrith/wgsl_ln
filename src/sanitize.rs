@@ -1,31 +1,32 @@
 use proc_macro2::{token_stream::IntoIter, Delimiter, Group, Ident, TokenStream, TokenTree};
 /// Find the first instance of `#ident` and rewrite the macro as `__paste!(wgsl!())`.
-pub fn sanitize(stream: TokenStream) -> (TokenStream, Option<Ident>) {
+pub fn sanitize_wgsl(stream: TokenStream) -> (TokenStream, Option<Ident>) {
     let mut result = Vec::new();
-    let mut last_is_hash = false;
-    let mut iter = stream.into_iter();
-    let mut first = true;
+    let mut prev_token_was_hash_char = false;
+    let mut iter: IntoIter = stream.into_iter();
+    let mut first_token = true;
     while let Some(tt) = iter.next() {
         match tt {
             // ifndef
-            TokenTree::Group(g) if first && g.delimiter() == Delimiter::Bracket => {
-                result.push(TokenTree::Group(g));
+            TokenTree::Group(group) if first_token && group.delimiter() == Delimiter::Bracket => {
+                result.push(TokenTree::Group(group));
             }
+            // hash char tokens will never be added to the output except as part of a naga oil definition, as seen below.
             TokenTree::Punct(p) if p.as_char() == '#' => {
-                last_is_hash = true;
+                prev_token_was_hash_char = true;
             }
             // if is a naga_oil definition, write `#def`
             #[cfg(feature = "naga_oil")]
-            TokenTree::Ident(ident) if last_is_hash && is_naga_oil_name(&ident) => {
-                last_is_hash = false;
+            TokenTree::Ident(ident) if prev_token_was_hash_char && is_naga_oil_name(&ident) => {
+                prev_token_was_hash_char = false;
                 result.push(TokenTree::Punct(proc_macro2::Punct::new(
                     '#',
                     Spacing::Joint,
                 )));
                 result.push(TokenTree::Ident(ident.clone()));
             }
-            // If # ident, import it and remove duplicated `#`s.
-            TokenTree::Ident(ident) if last_is_hash => {
+            // If # ident, this is a wgsl_ln import statement, so import it and remove duplicated `#`s if they exist.
+            TokenTree::Ident(ident) if prev_token_was_hash_char => {
                 result.push(TokenTree::Ident(ident.clone()));
                 sanitize_remaining(iter, &ident, &mut result);
                 return (TokenStream::from_iter(result), Some(ident));
@@ -33,19 +34,20 @@ pub fn sanitize(stream: TokenStream) -> (TokenStream, Option<Ident>) {
             // Recursively look for `#`s.
             TokenTree::Group(g) => {
                 let delim = g.delimiter();
-                let (stream, ident) = sanitize(g.stream());
+                let (stream, ident) = sanitize_wgsl(g.stream());
                 result.push(TokenTree::Group(Group::new(delim, stream)));
                 if let Some(ident) = ident {
                     sanitize_remaining(iter, &ident, &mut result);
                     return (TokenStream::from_iter(result), Some(ident));
                 }
             }
+            // copy non-special tokens to the results
             tt => {
-                last_is_hash = false;
+                prev_token_was_hash_char = false;
                 result.push(tt)
             }
         }
-        first = false
+        first_token = false
     }
     (TokenStream::from_iter(result), None)
 }

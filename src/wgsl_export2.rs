@@ -46,17 +46,17 @@ pub fn wgsl_export2(attr: TokenStream, stream: TokenStream) -> TokenStream {
     abort!(Span::call_site(), "Expected wgsl! macro.");
 }
 
-pub fn rust_to_wgsl_export2(attr: TokenStream, stream: TokenStream) -> TokenStream {
+pub fn rust_to_wgsl_export2(attr: TokenStream, rust_stream: TokenStream) -> TokenStream {
     let Some(TokenTree::Ident(name)) = attr.into_iter().next() else {
-        abort!(Span::call_site(), "Expected #[rust_to_wgsl_export(name)]");
+        abort!(Span::call_site(), "Expected #[wgsl_export(name)]");
     };
     let mut wgsl_macro_ident = false;
     let mut exclamation_mark = false;
     let sealed = format_ident!("__sealed_{}", name);
-    let mut paste = format_ident!("__rust_to_wgsl_paste_{}", name);
+    let mut paste = format_ident!("__wgsl_paste_{}", name);
     paste.set_span(name.span());
-    for token in stream.clone() {
-        match token {
+    for rust_token in rust_stream.clone() {
+        match rust_token {
             TokenTree::Ident(i) if i == "rust_to_wgsl" => {
                 wgsl_macro_ident = true;
                 exclamation_mark = false;
@@ -74,11 +74,11 @@ pub fn rust_to_wgsl_export2(attr: TokenStream, stream: TokenStream) -> TokenStre
                         #[macro_export]
                         macro_rules! #paste {
                             (rust_to_wgsl!($($tt: tt)*)) => {
-                                ::wgsl_ln::__wgsl_paste!(#name {#source} $($tt)*)
+                                ::wgsl_ln::__rust_to_wgsl_paste!(#name {#source} $($tt)*)
                             };
                         }
                     }
-                    #stream
+                    #rust_stream
                 };
             }
             _ => {

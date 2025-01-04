@@ -51,8 +51,8 @@ pub fn __wgsl_paste2(stream: TokenStream) -> TokenStream {
     }
 }
 
-pub fn __rust_to_wgsl_paste2(stream: TokenStream) -> TokenStream {
-    let mut iter = stream.into_iter();
+pub fn __rust_to_wgsl_paste2(rust_stream: TokenStream) -> TokenStream {
+    let mut iter = rust_stream.into_iter();
     let Some(TokenTree::Ident(definition)) = iter.next() else {
         abort!(
             Span::call_site(),

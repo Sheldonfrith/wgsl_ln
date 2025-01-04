@@ -8,7 +8,12 @@ pub static HELLO: &str = wgsl!(
         return (v.x + v.y) + 1.0;
     }
 );
-
+// #[wgsl_export(hello5)]
+// pub static HELLO5: &str = wgsl!(
+// fn hello2(v: vec2<f32>) -> f32 {
+// return (v.x + v.y) + 3.0;
+// }
+// );
 pub static WORLD: &str = wgsl!(
     fn world(v: vec4<f32>) -> f32 {
         return #hello(v.xy) + #hello(v.zw);
